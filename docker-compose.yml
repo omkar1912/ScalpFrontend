@@ -1,0 +1,11 @@
+services:
+  scalpvault:
+    container_name: scalpvault-frontend-container
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+    - ./:/app
+    - /app/node_modules
+    ports:
+      - 3000:3000
