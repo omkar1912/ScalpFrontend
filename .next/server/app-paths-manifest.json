@@ -1,8 +1,8 @@
 {
   "/page": "app/page.js",
-  "/marketplace/page": "app/marketplace/page.js",
-  "/blog/page": "app/blog/page.js",
-  "/enquiry/page": "app/enquiry/page.js",
-  "/contact/page": "app/contact/page.js",
-  "/login/page": "app/login/page.js"
+  "/login/page": "app/login/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/profile/page": "app/dashboard/profile/page.js",
+  "/dashboard/enquiries/page": "app/dashboard/enquiries/page.js",
+  "/dashboard/notifications/page": "app/dashboard/notifications/page.js"
 }
