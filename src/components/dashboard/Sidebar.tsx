@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { LayoutDashboard, User, FileText, Bell, Recycle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const menuItems = [
+const defaultMenuItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'My Profile', href: '/dashboard/profile', icon: User },
   { name: 'My Enquiries', href: '/dashboard/enquiries', icon: FileText },
@@ -15,9 +15,11 @@ const menuItems = [
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  menuItems?: { name: string; href: string; icon: any }[];
+  title?: string;
 }
 
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, menuItems = defaultMenuItems, title = "ScrapMarket" }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -42,7 +44,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100">
           <Link href="/" className="flex items-center gap-2">
             <Recycle className="h-7 w-7 text-primary-600" />
-            <span className="text-lg font-bold text-gray-900 tracking-tight">ScrapMarket</span>
+            <span className="text-lg font-bold text-gray-900 tracking-tight">{title}</span>
           </Link>
           <button onClick={onClose} className="lg:hidden text-gray-400 hover:text-gray-600">
             <X className="h-5 w-5" />
