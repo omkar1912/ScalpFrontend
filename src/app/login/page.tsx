@@ -14,22 +14,46 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api-client';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
     }
     setError('');
-    // Simulate login
-    console.log('Logging in with:', { email, password });
+    setIsSubmitting(true);
+
+    try {
+      const response: any = await api.post('/auth/login', { email, password });
+      
+      // Store token in localStorage for client-side API calls
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+
+      // Redirect based on role
+      if (response.data.user.role === 'admin' || response.data.user.role === 'superadmin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

@@ -1,20 +1,53 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import FilterSidebar from '@/components/marketplace/FilterSidebar';
 import ProductGrid from '@/components/marketplace/ProductGrid';
 import MarketplaceControls from '@/components/marketplace/MarketplaceControls';
 import Pagination from '@/components/marketplace/Pagination';
-import { PRODUCTS } from '@/lib/mock-data';
+import { PRODUCTS, Product } from '@/lib/mock-data';
+import { api } from '@/lib/api-client';
 
 export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState('All Sectors');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [listings, setListings] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredProducts = PRODUCTS.filter(product => {
-    const matchesCategory = selectedCategory === 'All Sectors' || product.category === selectedCategory;
+  useEffect(() => {
+    const fetchListings = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const queryParams = new URLSearchParams();
+        if (selectedCategory !== 'All Sectors') {
+          queryParams.append('sector', selectedCategory);
+        }
+        if (searchQuery) {
+          queryParams.append('search', searchQuery);
+        }
+        
+        const response: any = await api.get(`/listings?${queryParams.toString()}`);
+        const data = response.data?.docs ?? response.data ?? [];
+        setListings(Array.isArray(data) && data.length > 0 ? data : PRODUCTS);
+      } catch (err: any) {
+        console.error('Failed to fetch listings:', err);
+        setError(err.message || 'Failed to fetch listings');
+        // Fallback to mock data if backend fails
+        setListings(PRODUCTS);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchListings();
+  }, [selectedCategory, searchQuery]);
+
+  const filteredProducts = listings.filter(product => {
+    const matchesCategory = selectedCategory === 'All Sectors' || product.category === selectedCategory || product.sector === selectedCategory;
     const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          product.category.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;

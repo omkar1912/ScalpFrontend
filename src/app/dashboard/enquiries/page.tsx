@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, Trash2, RotateCcw, Search, Filter, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { ALL_ENQUIRIES } from '@/lib/dashboard-data';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api-client';
 
 const statusStyles = {
   pending: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -20,10 +21,36 @@ const statusIcons = {
 export default function EnquiriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [enquiries, setEnquiries] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredEnquiries = ALL_ENQUIRIES.filter(enquiry => {
-    const matchesSearch = enquiry.material.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         enquiry.id.toLowerCase().includes(searchQuery.toLowerCase());
+  useEffect(() => {
+    const fetchEnquiries = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response: any = await api.get('/enquiries/my');
+        const data = response.data?.data ?? response.data?.docs ?? response.data ?? [];
+        setEnquiries(Array.isArray(data) ? data : []);
+      } catch (err: any) {
+        console.error('Failed to fetch enquiries:', err);
+        setError(err.message || 'Failed to fetch enquiries');
+        // Fallback to mock data
+        setEnquiries(ALL_ENQUIRIES);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEnquiries();
+  }, []);
+
+  const filteredEnquiries = enquiries.filter(enquiry => {
+    const material = enquiry.material || '';
+    const id = enquiry.id || enquiry._id || '';
+    const matchesSearch = material.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         id.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = filterStatus === 'all' || enquiry.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -86,10 +113,10 @@ export default function EnquiriesPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filteredEnquiries.map((enquiry) => {
-                const StatusIcon = statusIcons[enquiry.status];
+                const StatusIcon = statusIcons[enquiry.status as keyof typeof statusIcons] || Clock;
                 return (
-                  <tr key={enquiry.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{enquiry.id}</td>
+                  <tr key={enquiry.id || enquiry._id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{enquiry.id || enquiry._id}</td>
                     <td className="px-6 py-4">
                       <span className={cn(
                         "text-xs font-semibold px-2.5 py-1 rounded-full",
@@ -100,17 +127,17 @@ export default function EnquiriesPage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">{enquiry.material}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{enquiry.quantity}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{enquiry.price}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{enquiry.price || enquiry.expectedPrice}</td>
                     <td className="px-6 py-4">
                       <span className={cn(
                         "inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border",
-                        statusStyles[enquiry.status]
+                        statusStyles[enquiry.status as keyof typeof statusStyles] || statusStyles.pending
                       )}>
                         <StatusIcon className="h-3 w-3" />
                         {enquiry.status.charAt(0).toUpperCase() + enquiry.status.slice(1)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{enquiry.date}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{new Date(enquiry.date || enquiry.createdAt).toLocaleDateString()}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1">
                         <button

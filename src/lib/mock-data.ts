@@ -12,6 +12,7 @@ export interface Product {
   id: string;
   title: string;
   category: string;
+  sector?: string;
   price: number;
   unit: string;
   quantity: string;

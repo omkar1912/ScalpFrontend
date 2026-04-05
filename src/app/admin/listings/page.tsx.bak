@@ -1,0 +1,232 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { 
+  Eye, 
+  Trash2, 
+  Search, 
+  Filter, 
+  CheckCircle, 
+  Clock, 
+  AlertCircle,
+  Check,
+  X,
+  Star,
+  ShoppingBag,
+  TrendingUp,
+  MapPin
+} from 'lucide-react';
+import { api } from '@/lib/api-client';
+import { cn } from '@/lib/utils';
+
+const statusStyles = {
+  pending: 'bg-amber-50 text-amber-700 border-amber-200',
+  approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  rejected: 'bg-red-50 text-red-700 border-red-200',
+};
+
+const statusIcons = {
+  pending: Clock,
+  approved: CheckCircle,
+  rejected: AlertCircle,
+};
+
+export default function AdminListingManagement() {
+  const [listings, setListings] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchListings();
+  }, [filterStatus]);
+
+  const fetchListings = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const url = filterStatus === 'all' ? '/listings/admin/all' : `/listings/admin/all?status=${filterStatus}`;
+      const response: any = await api.get(url);
+      const data = response.data?.data ?? response.data?.docs ?? response.data ?? [];
+        setListings(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      console.error('Failed to fetch listings:', err);
+      setError(err.message || 'Failed to fetch listings');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (id: string, status: string) => {
+    setIsUpdating(id);
+    try {
+      await api.put(`/listings/${id}/status`, { status });
+      await fetchListings();
+    } catch (err: any) {
+      console.error('Failed to update listing status:', err);
+      alert(err.message || 'Failed to update listing status');
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const filteredListings = listings.filter(listing => {
+    const title = listing.title || '';
+    const category = listing.category || '';
+    const seller = listing.sellerId?.name || '';
+    
+    return title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           seller.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Listing Management</h1>
+          <p className="text-sm text-gray-500 mt-1">Review and manage all marketplace listings</p>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-grow">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by title, category or seller..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-gray-400" />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="text-sm bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="text-left text-xs font-black text-gray-400 uppercase tracking-widest bg-gray-50/80">
+                <th className="px-6 py-4">Listing</th>
+                <th className="px-6 py-4">Seller</th>
+                <th className="px-6 py-4">Price/Unit</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Date</th>
+                <th className="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="flex justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredListings.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                    No listings found.
+                  </td>
+                </tr>
+              ) : filteredListings.map((listing) => {
+                const StatusIcon = statusIcons[listing.status as keyof typeof statusIcons] || Clock;
+                return (
+                  <tr key={listing._id || listing.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
+                          <img src={listing.image || listing.thumbnail} alt={listing.title} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-gray-900 line-clamp-1">{listing.title}</span>
+                          <span className="text-xs text-gray-500 uppercase tracking-widest font-black">{listing.category}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-900">{listing.sellerId?.name || 'Unknown'}</span>
+                        <div className="flex items-center gap-1 text-orange-500">
+                          <Star className="w-3 h-3 fill-current" />
+                          <span className="text-xs font-bold">4.8</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-gray-900">₹{listing.price}</span>
+                        <span className="text-xs text-gray-500">per {listing.unit || 'kg'}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={cn(
+                        "inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border",
+                        statusStyles[listing.status as keyof typeof statusStyles] || statusStyles.pending
+                      )}>
+                        <StatusIcon className="h-3 w-3" />
+                        {listing.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {new Date(listing.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        {listing.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => handleUpdateStatus(listing._id || listing.id, 'approved')}
+                              disabled={isUpdating === (listing._id || listing.id)}
+                              className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                              title="Approve"
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(listing._id || listing.id, 'rejected')}
+                              disabled={isUpdating === (listing._id || listing.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Reject"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        <Link 
+                          href={`/marketplace/${listing._id || listing.id}`}
+                          className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}

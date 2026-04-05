@@ -1,16 +1,49 @@
 'use client';
 
-import { useState } from 'react';
-import { BLOG_POSTS } from '@/lib/blog-data';
+import { useState, useEffect } from 'react';
+import { BLOG_POSTS, BlogPost } from '@/lib/blog-data';
 import BlogCard from '@/components/blog/BlogCard';
 import BlogSidebar from '@/components/blog/BlogSidebar';
 import { Newspaper } from 'lucide-react';
+import { api } from '@/lib/api-client';
 
 export default function BlogListingPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredPosts = BLOG_POSTS.filter((post) => {
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const queryParams = new URLSearchParams();
+        if (selectedCategory !== 'All') {
+          queryParams.append('category', selectedCategory);
+        }
+        if (searchQuery) {
+          queryParams.append('search', searchQuery);
+        }
+        
+        const response: any = await api.get(`/blogs?${queryParams.toString()}`);
+        const data = response.data?.docs ?? response.data ?? [];
+        setPosts(Array.isArray(data) && data.length > 0 ? data : BLOG_POSTS);
+      } catch (err: any) {
+        console.error('Failed to fetch blog posts:', err);
+        setError(err.message || 'Failed to fetch blog posts');
+        // Fallback to mock data if backend fails
+        setPosts(BLOG_POSTS);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, [selectedCategory, searchQuery]);
+
+  const filteredPosts = posts.filter((post) => {
     const matchesCategory = selectedCategory === 'All' || post.category === selectedCategory;
     const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());

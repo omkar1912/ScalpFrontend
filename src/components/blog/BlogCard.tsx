@@ -67,7 +67,7 @@ export default function BlogCard({ post, featured }: BlogCardProps) {
             </div>
           </div>
           <Link 
-            href={`/blog/${post.id}`}
+            href={`/blog/${post.slug}`}
             className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center hover:bg-primary-600 hover:text-white transition-all duration-300 group/btn"
           >
             <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />

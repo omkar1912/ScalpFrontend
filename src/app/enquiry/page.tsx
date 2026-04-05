@@ -11,20 +11,54 @@ import {
   Package, 
   MessageSquare,
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  AlertCircle
 } from 'lucide-react';
 import { CATEGORIES } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api-client';
 
 export default function EnquiryPage() {
   const [type, setType] = useState<'buy' | 'sell'>('buy');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    city: '',
+    sector: '',
+    material: '',
+    message: ''
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    // Simulate API call
-    setTimeout(() => setIsSubmitted(false), 5000);
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Parse quantity and material from "material" field
+      // For simplicity, we'll send material as name and quantity as 1
+      // In a real app, we'd have separate fields
+      await api.post('/enquiries', {
+        type,
+        ...formData,
+        quantity: 1, // Default to 1 if not specified
+      });
+      setIsSubmitted(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit enquiry');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSubmitted) {
@@ -95,6 +129,12 @@ export default function EnquiryPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="p-8 lg:p-12 space-y-8">
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-sm flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                {error}
+              </div>
+            )}
             {/* Personal Info Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -104,6 +144,9 @@ export default function EnquiryPage() {
                   <input 
                     type="text" 
                     required
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
                     placeholder="John Doe"
                     className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all text-sm font-medium"
                   />
@@ -116,6 +159,9 @@ export default function EnquiryPage() {
                   <input 
                     type="email" 
                     required
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
                     placeholder="john@company.com"
                     className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all text-sm font-medium"
                   />
@@ -128,6 +174,9 @@ export default function EnquiryPage() {
                   <input 
                     type="tel" 
                     required
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
                     placeholder="+1 (555) 000-0000"
                     className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all text-sm font-medium"
                   />
@@ -140,6 +189,9 @@ export default function EnquiryPage() {
                   <input 
                     type="text" 
                     required
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
                     placeholder="Mumbai, India"
                     className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all text-sm font-medium"
                   />
@@ -155,6 +207,9 @@ export default function EnquiryPage() {
                   <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none group-focus-within:text-primary-500 transition-colors" />
                   <select 
                     required
+                    name="sector"
+                    value={formData.sector}
+                    onChange={handleChange}
                     className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all text-sm font-medium appearance-none"
                   >
                     <option value="">Select Sector</option>
@@ -171,6 +226,9 @@ export default function EnquiryPage() {
                   <input 
                     type="text" 
                     required
+                    name="material"
+                    value={formData.material}
+                    onChange={handleChange}
                     placeholder="e.g. Copper Wire, 5000 kg"
                     className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all text-sm font-medium"
                   />
@@ -185,6 +243,9 @@ export default function EnquiryPage() {
                 <MessageSquare className="absolute left-4 top-5 w-5 h-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
                 <textarea 
                   rows={4}
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
                   placeholder="Tell us more about your requirements..."
                   className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white outline-none transition-all text-sm font-medium resize-none"
                 />
@@ -194,15 +255,12 @@ export default function EnquiryPage() {
             {/* Submit */}
             <button 
               type="submit"
-              className="w-full bg-primary-600 text-white py-5 rounded-2xl font-black hover:bg-primary-700 active:scale-[0.98] transition-all shadow-2xl shadow-primary-200 flex items-center justify-center gap-3 text-lg"
+              disabled={isSubmitting}
+              className="w-full bg-primary-600 text-white py-5 rounded-2xl font-black hover:bg-primary-700 active:scale-[0.98] transition-all shadow-2xl shadow-primary-200 flex items-center justify-center gap-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Send Request
+              {isSubmitting ? 'Sending...' : 'Send Request'}
               <ArrowRight className="w-6 h-6" />
             </button>
-
-            <p className="text-center text-xs text-gray-400 font-medium">
-              By submitting, you agree to our Terms of Service and Privacy Policy.
-            </p>
           </form>
         </div>
       </div>

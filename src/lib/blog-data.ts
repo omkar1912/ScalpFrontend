@@ -1,5 +1,6 @@
 export interface BlogPost {
   id: string;
+  slug: string;
   title: string;
   excerpt: string;
   content: string;
@@ -26,6 +27,7 @@ export const BLOG_CATEGORIES = [
 export const BLOG_POSTS: BlogPost[] = [
   {
     id: '1',
+    slug: 'future-aluminum-recycling-2026',
     title: 'The Future of Aluminum Recycling in 2026',
     excerpt: 'Explore how new smelting technologies are revolutionizing the secondary aluminum market and driving sustainability in the automotive sector.',
     content: 'Full content here...',
@@ -41,6 +43,7 @@ export const BLOG_POSTS: BlogPost[] = [
   },
   {
     id: '2',
+    slug: 'plastic-waste-regulations-businesses-need-to-know',
     title: 'Plastic Waste Regulations: What Businesses Need to Know',
     excerpt: 'A comprehensive guide to the latest international treaties and local regulations affecting plastic scrap exports and domestic processing.',
     content: 'Full content here...',
@@ -56,6 +59,7 @@ export const BLOG_POSTS: BlogPost[] = [
   },
   {
     id: '3',
+    slug: '5-tips-maximizing-value-office-paper-scrap',
     title: '5 Tips for Maximizing Value from Office Paper Scrap',
     excerpt: 'Learn how to sort and bale your office paper waste to ensure you get the best market rates from recyclers.',
     content: 'Full content here...',
@@ -71,6 +75,7 @@ export const BLOG_POSTS: BlogPost[] = [
   },
   {
     id: '4',
+    slug: 'rise-e-waste-multi-billion-dollar-opportunity',
     title: 'The Rise of E-Waste: A Multi-Billion Dollar Opportunity',
     excerpt: 'Why electronics scrap is becoming the most valuable sector in the recycling industry and how to capitalize on it.',
     content: 'Full content here...',
@@ -86,6 +91,7 @@ export const BLOG_POSTS: BlogPost[] = [
   },
   {
     id: '5',
+    slug: 'circular-economy-beyond-just-recycling',
     title: 'Circular Economy: Beyond Just Recycling',
     excerpt: 'How businesses are redesigning their supply chains to eliminate waste and create long-term value through closed-loop systems.',
     content: 'Full content here...',

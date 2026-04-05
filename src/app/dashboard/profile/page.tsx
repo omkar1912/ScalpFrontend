@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { User, Mail, Phone, Building2, CreditCard, MapPin, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { DASHBOARD_USER } from '@/lib/dashboard-data';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api-client';
 
 const kycStatusStyles = {
   verified: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -17,7 +19,47 @@ const kycStatusIcons = {
 };
 
 export default function ProfilePage() {
-  const KycIcon = kycStatusIcons[DASHBOARD_USER.kycStatus];
+  const [user, setUser] = useState(DASHBOARD_USER);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response: any = await api.get('/users/profile');
+        const data = response.data;
+        
+        // Normalize backend data to match frontend expectations
+        const normalizedUser = {
+          ...data,
+          company: data.companyName || data.company || '',
+          kycStatus: data.kyc?.status || data.kycStatus || 'pending',
+          gst: data.gstNumber || data.gst || '',
+          pan: data.panNumber || data.pan || '',
+          address: typeof data.address === 'string' ? {
+            street: data.address,
+            city: data.city || '',
+            state: data.state || '',
+            country: 'India',
+            pincode: data.pincode || ''
+          } : (data.address || { street: '', city: '', state: '', country: '', pincode: '' })
+        };
+        
+        setUser(normalizedUser);
+      } catch (err: any) {
+        console.error('Failed to fetch profile:', err);
+        setError(err.message || 'Failed to fetch profile');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const KycIcon = kycStatusIcons[user.kycStatus as keyof typeof kycStatusIcons] || AlertCircle;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -34,19 +76,19 @@ export default function ProfilePage() {
           <div className="flex items-center gap-4">
             <div className="h-20 w-20 rounded-2xl bg-white/20 flex items-center justify-center">
               <span className="text-2xl font-bold text-white">
-                {DASHBOARD_USER.name.split(' ').map(n => n[0]).join('')}
+                {user.name.split(' ').map(n => n[0]).join('')}
               </span>
             </div>
             <div className="text-white">
-              <h2 className="text-xl font-bold">{DASHBOARD_USER.name}</h2>
-              <p className="text-primary-100 text-sm">{DASHBOARD_USER.company}</p>
+              <h2 className="text-xl font-bold">{user.name}</h2>
+              <p className="text-primary-100 text-sm">{user.company}</p>
               <div className="flex items-center gap-2 mt-2">
                 <span className={cn(
                   "inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border",
-                  kycStatusStyles[DASHBOARD_USER.kycStatus]
+                  kycStatusStyles[user.kycStatus as keyof typeof kycStatusStyles] || kycStatusStyles.pending
                 )}>
                   <KycIcon className="h-3 w-3" />
-                  KYC {DASHBOARD_USER.kycStatus.charAt(0).toUpperCase() + DASHBOARD_USER.kycStatus.slice(1)}
+                  KYC {(user.kycStatus || 'pending').charAt(0).toUpperCase() + (user.kycStatus || 'pending').slice(1)}
                 </span>
               </div>
             </div>
@@ -63,7 +105,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="text-xs text-gray-500">Full Name</p>
-                <p className="text-sm font-medium text-gray-900">{DASHBOARD_USER.name}</p>
+                <p className="text-sm font-medium text-gray-900">{user.name}</p>
               </div>
             </div>
 
@@ -73,7 +115,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="text-xs text-gray-500">Email Address</p>
-                <p className="text-sm font-medium text-gray-900">{DASHBOARD_USER.email}</p>
+                <p className="text-sm font-medium text-gray-900">{user.email}</p>
               </div>
             </div>
 
@@ -83,7 +125,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="text-xs text-gray-500">Phone Number</p>
-                <p className="text-sm font-medium text-gray-900">{DASHBOARD_USER.phone}</p>
+                <p className="text-sm font-medium text-gray-900">{user.phone}</p>
               </div>
             </div>
 
@@ -93,7 +135,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="text-xs text-gray-500">Company</p>
-                <p className="text-sm font-medium text-gray-900">{DASHBOARD_USER.company}</p>
+                <p className="text-sm font-medium text-gray-900">{user.company}</p>
               </div>
             </div>
           </div>
@@ -110,7 +152,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <p className="text-xs text-gray-500">GST Number</p>
-              <p className="text-sm font-medium text-gray-900 font-mono">{DASHBOARD_USER.gst}</p>
+              <p className="text-sm font-medium text-gray-900 font-mono">{user.gst}</p>
             </div>
           </div>
 
@@ -120,7 +162,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <p className="text-xs text-gray-500">PAN Number</p>
-              <p className="text-sm font-medium text-gray-900 font-mono">{DASHBOARD_USER.pan}</p>
+              <p className="text-sm font-medium text-gray-900 font-mono">{user.pan}</p>
             </div>
           </div>
         </div>
@@ -134,12 +176,12 @@ export default function ProfilePage() {
             <MapPin className="h-5 w-5 text-primary-600" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">{DASHBOARD_USER.address.street}</p>
+            <p className="text-sm font-medium text-gray-900">{user.address?.street}</p>
             <p className="text-sm text-gray-600">
-              {DASHBOARD_USER.address.city}, {DASHBOARD_USER.address.state}
+              {user.address?.city}, {user.address?.state}
             </p>
             <p className="text-sm text-gray-600">
-              {DASHBOARD_USER.address.country} - {DASHBOARD_USER.address.pincode}
+              {user.address?.country} - {user.address?.pincode}
             </p>
           </div>
         </div>
